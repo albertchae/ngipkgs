@@ -30,9 +30,7 @@ in
         ReadWritePaths = "";
         BindReadOnlyPaths = [
           builtins.storeDir
-        ] 
-        ++ lib.optional (cfg.settings.tls-cert != null) cfg.settings.tls-cert
-        ++ lib.optional (cfg.settings.tls-key != null) cfg.settings.tls-key;
+        ];
         CapabilityBoundingSet = "";
         RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
         RestrictNamespaces = true;
