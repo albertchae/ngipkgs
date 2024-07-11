@@ -120,10 +120,8 @@ in {
         wireguardConfig.ListenPort = server.wg.listen;
         wireguardPeers = [
           {
-            wireguardPeerConfig = {
-              AllowedIPs = ["::/0"];
-              PublicKey = client.wg.public;
-            };
+            AllowedIPs = ["::/0"];
+            PublicKey = client.wg.public;
           }
         ];
       };
@@ -145,11 +143,9 @@ in {
 
       systemd.network.netdevs."10-${deviceName}".wireguardPeers = [
         {
-          wireguardPeerConfig = {
-            AllowedIPs = ["::/0"];
-            PublicKey = server.wg.public;
-            Endpoint = "server:${builtins.toString server.wg.listen}";
-          };
+          AllowedIPs = ["::/0"];
+          PublicKey = server.wg.public;
+          Endpoint = "server:${builtins.toString server.wg.listen}";
         }
       ];
 
@@ -181,26 +177,4 @@ in {
         for machine in [server, client]:
             machine.wait_until_succeeds("wg show all preshared-keys | grep --invert-match none", timeout=5)
   '';
-
-  # NOTE: Below configuration is for "interactive" (=developing/debugging) only.
-  interactive.nodes = let
-    # Use kmscon <https://www.freedesktop.org/wiki/Software/kmscon/>
-    # to provide a slightly nicer console, and while we're at it,
-    # also use a nice font.
-    # With kmscon, we can for example zoom in/out using [Ctrl] + [+]
-    # and [Ctrl] + [-]
-    niceConsoleAndAutologin.services.kmscon = {
-      enable = true;
-      autologinUser = "root";
-      fonts = [
-        {
-          name = "Fira Code";
-          package = pkgs.fira-code;
-        }
-      ];
-    };
-  in {
-    server = niceConsoleAndAutologin;
-    client = niceConsoleAndAutologin;
-  };
 }

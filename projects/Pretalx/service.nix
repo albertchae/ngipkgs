@@ -64,7 +64,7 @@ in {
   options.services.ngi-pretalx = with types; {
     enable = mkEnableOption "Enable pretalx server.";
 
-    package = mkPackageOption pkgs "pretalx" {};
+    package = mkPackageOption pkgs "pretalxFull" {};
 
     user = mkOption {
       type = str;
@@ -137,6 +137,7 @@ in {
           Directory that contains static files. It needs to be writable by the pretalx process. pretalx will put files there.
         '';
         default = "${cfg.package.static}";
+        defaultText = literalExpression "\"\${config.services.ngi-pretalx.package.static}\"";
       };
     };
 

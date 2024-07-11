@@ -5,6 +5,8 @@
   projects,
   self,
 }: let
+  lib' = import ../lib.nix {inherit lib;};
+
   inherit
     (builtins)
     any
@@ -14,7 +16,6 @@
     filter
     isList
     readFile
-    stringLength
     substring
     toJSON
     toString
@@ -23,17 +24,23 @@
   inherit
     (lib)
     concatLines
-    flattenAttrsDot
     flip
     hasPrefix
     mapAttrsToList
     optionalString
+    splitString
+    ;
+
+  inherit
+    (lib')
+    flattenAttrsDot
     ;
 
   empty = xs: assert isList xs; xs == [];
   heading = i: text: "<h${toString i}>${text}</h${toString i}>";
   dottedLoc = option: concatStringsSep "." option.loc;
 
+  # Splits a compressed date up into ISO 8601
   lastModified = let
     sub = start: len: substring start len self.lastModifiedDate;
   in "${sub 0 4}-${sub 4 2}-${sub 6 2}T${sub 8 2}:${sub 10 2}:${sub 12 2}Z";
@@ -50,7 +57,7 @@
       filter
       (option: any ((flip hasPrefix) (dottedLoc option)) spec)
       (attrValues options);
-    configurations = project: attrValues (project.nixos.configurations or {});
+    examples = project: attrValues (project.nixos.examples or {});
     packages = project: attrValues (project.packages or {});
   };
 
@@ -107,20 +114,23 @@
         '';
     };
 
-    configurations = rec {
-      one = configuration: ''
+    examples = rec {
+      one = example: ''
         <li>
-          <p>${configuration.description}</p>
-          ```nix
-        ${readFile configuration.path}
-          ```
+
+        ${example.description}
+
+        ```nix
+        ${readFile example.path}
+        ```
+
         </li>
       '';
-      many = configurations:
-        optionalString (!empty configurations)
+      many = examples:
+        optionalString (!empty examples)
         ''
-          <section><details><summary>${heading 3 "Configurations"}</summary><ul>
-          ${concatLines (map one configurations)}
+          <section><details><summary>${heading 3 "Examples"}</summary><ul>
+          ${concatLines (map one examples)}
           </ul></details></section>
         '';
     };
@@ -132,7 +142,7 @@
 
         ${render.packages.many (pick.packages project)}
         ${render.options.many (pick.options project)}
-        ${render.configurations.many (pick.configurations project)}
+        ${render.examples.many (pick.examples project)}
         </details></section>
       '';
       many = projects: concatLines (mapAttrsToList one projects);
@@ -151,11 +161,22 @@
   '';
 in
   pkgs.runCommand "overview" {
-    nativeBuildInputs = with pkgs; [jq pandoc validator-nu gnused];
+    nativeBuildInputs = with pkgs; [jq gnused pandoc validator-nu];
   } ''
     mkdir -v $out
     cp -v ${./style.css} $out/style.css
-    pandoc --from=markdown+raw_html --to=html --standalone --css="style.css" --metadata-file=${metadata} --output=$out/index.html ${content}
-    sed --file=${./fixup.sed} --in-place $out/index.html
+
+    pandoc \
+      --from=markdown+raw_html \
+      --to=html \
+      --standalone \
+      --css="style.css" \
+      --metadata-file=${metadata} \
+      --output=$out/index.html ${content}
+
+    sed --file=${./fixup.sed} \
+      --in-place \
+      $out/index.html
+
     vnu -Werror --format json $out/*.html 2>&1 | jq
   ''

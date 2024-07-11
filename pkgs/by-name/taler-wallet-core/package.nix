@@ -1,15 +1,13 @@
 {
   lib,
   stdenv,
-  esbuild,
   buildGoModule,
   fetchFromGitHub,
   fetchgit,
   git,
   jq,
-  moreutils,
-  nodePackages,
-  cacert,
+  nodejs,
+  pnpm,
   python3,
   zip,
 }: let
@@ -39,68 +37,32 @@
       mainProgram = "esbuild";
     };
   };
-  taler-wallet-core-pnpm-deps = stdenv.mkDerivation rec {
-    pname = "taler-wallet-core-pnpm-deps";
-    version = "0.10.7";
+in
+  stdenv.mkDerivation rec {
+    pname = "taler-wallet-core";
+    version = "0.11.2";
 
     src = fetchgit {
       url = "https://git.taler.net/wallet-core.git";
       rev = "v${version}";
-      hash = "sha256-eKUuzw25Z7EYkk6YaFKAnRYuB04QC3swjn8tGm8uQNk=";
+      hash = "sha256-GtR87XqmunYubh9EiY3bJIqXiXrT+re3KqWypYK3NCo=";
     };
 
-    nativeBuildInputs = [
-      jq
-      moreutils
-      nodePackages.pnpm
-      cacert
-    ];
-
-    dontBuild = true;
-
-    installPhase = ''
-      runHook preInstall
-
-      export HOME=$(mktemp -d)
-
-      pnpm config set store-dir $out
-      pnpm install --frozen-lockfile --ignore-script
-
-      rm -rf $out/v3/tmp
-      for f in $(find $out -name "*.json"); do
-        sed -i -E -e 's/"checkedAt":[0-9]+,//g' $f
-        jq --sort-keys . $f | sponge $f
-      done
-
-      runHook postInstall
-    '';
-
-    dontFixup = true;
-
-    outputHashMode = "recursive";
-    outputHash =
-      {
-        x86_64-linux = "sha256-pJrezaEDx7e8qZMICSQmtCwlA9RNObbrFYsnPd3Ag8Y=";
-        aarch64-linux = "sha256-48YXhLFbCsL0UqfrOI6a6MqJl0UpqQbMtbKsw6rjhcU=";
-      }
-      .${stdenv.system}
-      or (throw "Unsupported system: ${stdenv.system}");
-  };
-in
-  stdenv.mkDerivation {
-    pname = "taler-wallet-core";
-    inherit (taler-wallet-core-pnpm-deps) version src;
+    pnpmDeps = pnpm.fetchDeps {
+      inherit src pname;
+      hash = "sha256-RdG/QnZNIvQIMU7ScSFz2OfbctHBr65GWXLPvVaybfQ=";
+    };
 
     nativeBuildInputs = [
       git
       jq
-      nodePackages.nodejs
-      nodePackages.pnpm
+      nodejs
+      pnpm.configHook
       python3
       zip
     ];
 
-    buildInputs = [nodePackages.nodejs];
+    buildInputs = [nodejs];
 
     postUnpack = ''
       git init -b master
@@ -108,6 +70,10 @@ in
       git config user.name "root"
       git commit --allow-empty -m "Initial commit"
     '';
+
+    patches = [
+      ./taler-python-3.12.patch
+    ];
 
     postPatch = ''
       patchShebangs packages/*/*.mjs
@@ -121,9 +87,6 @@ in
 
     preBuild = ''
       export HOME=$(mktemp -d)
-
-      pnpm config set store-dir ${taler-wallet-core-pnpm-deps}
-      pnpm install --offline --frozen-lockfile --ignore-script
       patchShebangs node_modules/{*,.*}
     '';
 

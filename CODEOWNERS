@@ -1,0 +1,2 @@
+/infra/ @ngi-nix/infra
+/.github/workflows/makemake.yaml @ngi-nix/infra

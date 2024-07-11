@@ -3,19 +3,18 @@
   callPackage,
   stdenv,
   fetchgit,
+  makeWrapper,
   python3,
   jdk17_headless,
   gradle-packages,
-  perl,
   writeText,
-  git,
 }: let
   pname = "libeufin";
-  version = "0.9.3-dev.33";
+  version = "0.11.2";
   src = fetchgit {
     url = "https://git.taler.net/libeufin.git/";
     rev = "v${version}";
-    hash = "sha256-BGxlmK4u914byOt/4FGnw5wGZtxhQmfhQHSJY+C8YqY=";
+    hash = "sha256-7w5G8F/XWsWJwkpQQ8GqDA9u6HLV+X9N2RJHn+yXihs=";
     fetchSubmodules = true;
     leaveDotGit = true; # Required for correct submodule fetching
     # Delete .git folder for reproducibility (otherwise, the hash changes unexpectedly after fetching submodules)
@@ -23,12 +22,13 @@
     postFetch = ''
       (
         cd $out
-        git rev-parse --short HEAD > ./util/src/main/resources/HEAD.txt
+        git rev-parse --short HEAD > ./common/src/main/resources/HEAD.txt
         rm -rf .git
       )
     '';
   };
   patches = [
+    ../taler-wallet-core/taler-python-3.12.patch
     # The .git folder had to be deleted. Read hash from file instead of using the git command.
     ./read-HEAD-hash-from-file.patch
     # Gradle projects provide a .module metadata file as artifact. This artifact is used by gradle
@@ -38,7 +38,7 @@
     ./use-maven-deps.patch
   ];
 
-  gradle = callPackage gradle-packages.gradle_8 {java = jdk17_headless;};
+  gradle = callPackage gradle-packages.gradle_8 {java = jdk;};
 
   # Pre-download deps into a derivation
   deps = callPackage ./deps {inherit gradle patches pname src version;};
@@ -50,6 +50,8 @@
     ["${deps}"]
     (builtins.readFile ./init.gradle.template)
   );
+
+  jdk = jdk17_headless;
 in
   stdenv.mkDerivation {
     inherit patches pname src version;
@@ -65,11 +67,17 @@ in
 
     installPhase = ''
       make install-nobuild
+
+      # wrap commands to provide JAVA_HOME
+      for name in libeufin-bank libeufin-dbconfig libeufin-nexus; do
+        wrapProgram $out/bin/$name --set JAVA_HOME "${jdk}"
+      done
     '';
 
     nativeBuildInputs = [
+      makeWrapper
       python3
-      jdk17_headless
+      jdk
       gradle
     ];
 
