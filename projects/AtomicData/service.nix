@@ -27,6 +27,7 @@ in
         Environment = [
           "ATOMIC_CONFIG_DIR=/var/lib/atomic-server"
           "ATOMIC_DATA_DIR=/var/lib/atomic-server"
+          "RUST_LOG=trace"
         ];
         StateDirectory = "atomic-server";
         CacheDirectory = "atomic-server";

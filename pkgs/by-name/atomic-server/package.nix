@@ -1,7 +1,9 @@
 {
   lib,
+  fetchFromGitHub,
   fetchCrate,
   rustPlatform,
+  atomic-browser,
 }: let
   inherit
     (lib)
@@ -12,12 +14,26 @@ in
     pname = "atomic-server";
     version = "0.37.0";
 
-    src = fetchCrate {
-      inherit pname version;
-      hash = "sha256-/OKYac0HA9EWDQ5qNyMPITN5iUdLM9SAVmOm6PVIFOk=";
+#    src = fetchFromGitHub {
+#      owner = "atomicdata-dev";
+#      repo = pname;
+#      rev = "v${version}";
+#      hash = "sha256-+Lk2MvkTj+B+G6cNbWAbPrN5ECiyMJ4HSiiLzBLd74g=";
+#    };
+
+    src = fetchFromGitHub {
+      owner = "albertchae";
+      repo = pname;
+      rev = "37.0-searchpath";
+      hash = "sha256-pMgYsLl8uyFNudgfzSIHWlUHaSRdNj6Q2mc6gOmGsiQ=";
     };
 
-    cargoHash = "sha256-LwSyK/7EEoTf1x7KGtebPxYTqH3SCjXGONNMxcmdEv0=";
+    cargoHash = "sha256-cSv1XnuzL5PxVOTAUiyiQsMHSRUMaFDkW2/4Bt75G9o=";
+
+    postUnpack = ''
+      mkdir -p $TMP/source/server/assets_tmp
+      cp -r ${atomic-browser}/* $TMP/source/server/assets_tmp
+    '';
 
     doCheck = false; # TODO(jl): broken upstream
 
