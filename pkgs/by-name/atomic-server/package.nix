@@ -25,7 +25,7 @@ in
       owner = "albertchae";
       repo = pname;
       rev = "37.0-searchpath";
-      hash = "sha256-pMgYsLl8uyFNudgfzSIHWlUHaSRdNj6Q2mc6gOmGsiQ=";
+      hash = "sha256-aeQSka2EHU9ysyw4OLUyIhleox8I/Fcq0e4nYwajCSs=";
     };
 
     cargoHash = "sha256-cSv1XnuzL5PxVOTAUiyiQsMHSRUMaFDkW2/4Bt75G9o=";

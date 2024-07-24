@@ -28,6 +28,7 @@ in
           "ATOMIC_CONFIG_DIR=/var/lib/atomic-server"
           "ATOMIC_DATA_DIR=/var/lib/atomic-server"
           "RUST_LOG=trace"
+          "XDG_CACHE_HOME=/var/cache/atomic-server"
         ];
         StateDirectory = "atomic-server";
         CacheDirectory = "atomic-server";
